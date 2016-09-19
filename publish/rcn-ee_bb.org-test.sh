@@ -18,24 +18,24 @@ fi
 ./RootStock-NG.sh -c bb.org-debian-jessie-console-v4.1
 #./RootStock-NG.sh -c bb.org-debian-jessie-usbflasher
 
-debian_wheezy_machinekit="debian-7.9-machinekit-armhf-${time}"
-debian_jessie_lxqt_2gb="debian-8.3-lxqt-2gb-armhf-${time}"
-debian_jessie_lxqt_4gb="debian-8.3-lxqt-4gb-armhf-${time}"
-debian_jessie_console="debian-8.3-console-armhf-${time}"
-debian_jessie_usbflasher="debian-8.3-usbflasher-armhf-${time}"
+debian_wheezy_machinekit="debian-7.11-machinekit-armhf-${time}"
+  debian_jessie_lxqt_2gb="debian-8.6-lxqt-2gb-armhf-${time}"
+  debian_jessie_lxqt_4gb="debian-8.6-lxqt-4gb-armhf-${time}"
+   debian_jessie_console="debian-8.6-console-armhf-${time}"
+debian_jessie_usbflasher="debian-8.6-usbflasher-armhf-${time}"
 
 archive="xz -z -8"
 
-beaglebone="--dtb beaglebone --bbb-old-bootloader-in-emmc --hostname beaglebone"
+beaglebone="--dtb beaglebone --bbb-old-bootloader-in-emmc --hostname beaglebone --enable-cape-universal"
 
 bb_blank_flasher="--dtb bbb-blank-eeprom --bbb-old-bootloader-in-emmc \
---hostname beaglebone"
+--hostname beaglebone --enable-cape-universal"
 
 beaglebone_console="--dtb beaglebone --bbb-old-bootloader-in-emmc \
---hostname beaglebone"
+--hostname beaglebone --enable-cape-universal"
 
 bb_blank_flasher_console="--dtb bbb-blank-eeprom --bbb-old-bootloader-in-emmc \
---hostname beaglebone"
+--hostname beaglebone --enable-cape-universal"
 
 arduino_tre="--dtb am335x-arduino-tre --boot_label ARDUINO-TRE \
 --rootfs_label rootfs --hostname arduino-tre"
@@ -93,12 +93,15 @@ copy_img_to_mirror () {
                 fi
                 if [ -d ${mirror_dir}/${time}/\${blend}/ ] ; then
                         if [ -f \${wfile}.bmap ] ; then
-                                cp -v \${wfile}.bmap ${mirror_dir}/${time}/\${blend}/
+                                mv -v \${wfile}.bmap ${mirror_dir}/${time}/\${blend}/
+                                sync
                         fi
                         if [ ! -f ${mirror_dir}/${time}/\${blend}/\${wfile}.img.zx ] ; then
-                                cp -v \${wfile}.img ${mirror_dir}/${time}/\${blend}/
+                                mv -v \${wfile}.img ${mirror_dir}/${time}/\${blend}/
+                                sync
                                 if [ -f \${wfile}.img.xz.job.txt ] ; then
-                                        cp -v \${wfile}.img.xz.job.txt ${mirror_dir}/${time}/\${blend}/
+                                        mv -v \${wfile}.img.xz.job.txt ${mirror_dir}/${time}/\${blend}/
+                                        sync
                                 fi
                                 cd ${mirror_dir}/${time}/\${blend}/
                                 ${archive} \${wfile}.img && sha256sum \${wfile}.img.xz > \${wfile}.img.xz.sha256sum &
@@ -123,8 +126,10 @@ generate_img () {
         if [ -d \${base_rootfs}/ ] ; then
                 cd \${base_rootfs}/
                 sudo ./setup_sdcard.sh \${options}
-                mv *.img ../
-                mv *.job.txt ../
+                sudo chown 1000:1000 *.img || true
+                sudo chown 1000:1000 *.job.txt || true
+                mv *.img ../ || true
+                mv *.job.txt ../ || true
                 cd ..
         fi
 }
