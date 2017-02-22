@@ -18,27 +18,24 @@ fi
 #./RootStock-NG.sh -c bb.org-debian-jessie-lxqt-4gb-v4.4
 #./RootStock-NG.sh -c bb.org-debian-jessie-iot-v4.4
 #./RootStock-NG.sh -c bb.org-debian-jessie-console-v4.4
-#./RootStock-NG.sh -c bb.org-debian-jessie-usbflasher
+#./RootStock-NG.sh -c bb.org-debian-jessie-oemflasher
 ./RootStock-NG.sh -c seeed-debian-jessie-lxqt-4gb-v4.4
 ./RootStock-NG.sh -c seeed-debian-jessie-iot-v4.4
 
     debian_wheezy_machinekit="debian-7.11-machinekit-armhf-${time}"
-    debian_jessie_machinekit="debian-8.6-machinekit-armhf-${time}"
-      debian_jessie_lxqt_2gb="debian-8.6-lxqt-2gb-armhf-${time}"
-      debian_jessie_lxqt_4gb="debian-8.6-lxqt-4gb-armhf-${time}"
-           debian_jessie_iot="debian-8.6-iot-armhf-${time}"
-       debian_jessie_console="debian-8.6-console-armhf-${time}"
-    debian_jessie_usbflasher="debian-8.6-usbflasher-armhf-${time}"
-debian_jessie_seeed_lxqt_4gb="debian-8.6-seeed-lxqt-4gb-armhf-${time}"
-     debian_jessie_seeed_iot="debian-8.6-seeed-iot-armhf-${time}"
+    debian_jessie_machinekit="debian-8.7-machinekit-armhf-${time}"
+      debian_jessie_lxqt_2gb="debian-8.7-lxqt-2gb-armhf-${time}"
+      debian_jessie_lxqt_4gb="debian-8.7-lxqt-4gb-armhf-${time}"
+           debian_jessie_iot="debian-8.7-iot-armhf-${time}"
+       debian_jessie_console="debian-8.7-console-armhf-${time}"
+    debian_jessie_oemflasher="debian-8.7-oemflasher-armhf-${time}"
+debian_jessie_seeed_lxqt_4gb="debian-8.7-seeed-lxqt-4gb-armhf-${time}"
+     debian_jessie_seeed_iot="debian-8.7-seeed-iot-armhf-${time}"
 
 archive="xz -z -8"
 
 beaglebone="--dtb beaglebone --bbb-old-bootloader-in-emmc \
 --rootfs_label rootfs --hostname beaglebone --enable-cape-universal"
-
-arduino_tre="--dtb am335x-arduino-tre --boot_label ARDUINO-TRE \
---rootfs_label rootfs --hostname arduino-tre"
 
 omap5_uevm="--dtb omap5-uevm --rootfs_label rootfs --hostname omap5-uevm"
 beagle_x15="--dtb am57xx-beagle-x15 --rootfs_label rootfs \
@@ -154,7 +151,6 @@ options="--img-4gb m10a-blank-\${base_rootfs}  ${beaglebone}  --m10a-flasher" ; 
 options="--img-4gb bbx15-blank-\${base_rootfs} ${beagle_x15}  --emmc-flasher" ; generate_img
 
 #options="--img-4gb omap5-uevm-\${base_rootfs}  ${omap5_uevm}"                 ; generate_img
-#options="--img-4gb tre-\${base_rootfs}         ${arduino_tre}"                ; generate_img
 
 ###lxqt-2gb image
 base_rootfs="${debian_jessie_lxqt_2gb}" ; blend="lxqt-2gb" ; extract_base_rootfs
@@ -182,8 +178,8 @@ options="--img-2gb BBB-blank-\${base_rootfs}   ${beaglebone}  --emmc-flasher" ; 
 #options="--img-2gb omap5-uevm-\${base_rootfs}  ${omap5_uevm}"                  ; generate_img
 #options="--img-2gb BBGW-blank-\${base_rootfs}  ${beaglebone}  --bbgw-flasher"  ; generate_img
 
-###usbflasher images: (also single partition)
-base_rootfs="${debian_jessie_usbflasher}" ; blend="usbflasher" ; extract_base_rootfs
+###oemflasher images: (also single partition)
+base_rootfs="${debian_jessie_oemflasher}" ; blend="oemflasher" ; extract_base_rootfs
 
 ###Seeed lxqt-4gb image
 base_rootfs="${debian_jessie_seeed_lxqt_4gb}" ; blend="seeed-lxqt-4gb" ; extract_base_rootfs
@@ -204,7 +200,7 @@ base_rootfs="${debian_jessie_lxqt_4gb}"       ; blend="lxqt-4gb"       ; archive
 base_rootfs="${debian_jessie_lxqt_2gb}"       ; blend="lxqt-2gb"       ; archive_base_rootfs
 base_rootfs="${debian_jessie_iot}"            ; blend="iot"            ; archive_base_rootfs
 base_rootfs="${debian_jessie_console}"        ; blend="console"        ; archive_base_rootfs
-base_rootfs="${debian_jessie_usbflasher}"     ; blend="usbflasher"     ; archive_base_rootfs
+base_rootfs="${debian_jessie_oemflasher}"     ; blend="oemflasher"     ; archive_base_rootfs
 base_rootfs="${debian_jessie_seeed_lxqt_4gb}" ; blend="seeed-lxqt-4gb" ; archive_base_rootfs
 base_rootfs="${debian_jessie_seeed_iot}"      ; blend="seeed-iot"      ; archive_base_rootfs
 
@@ -254,7 +250,7 @@ wfile="bbx15-blank-\${base_rootfs}-2gb" ; archive_img
 #wfile="BBGW-blank-\${base_rootfs}-2gb"  ; archive_img
 
 #
-base_rootfs="${debian_jessie_usbflasher}" ; blend="usbflasher"
+base_rootfs="${debian_jessie_oemflasher}" ; blend="oemflasher"
 
 #
 base_rootfs="${debian_jessie_seeed_lxqt_4gb}" ; blend="seeed-lxqt-4gb"
@@ -278,10 +274,10 @@ if [ ! -d /mnt/farm/images/ ] ; then
 fi
 
 if [ -d /mnt/farm/images/ ] ; then
-	mkdir /mnt/farm/images/${time}/
-	echo "Copying: *.tar to server: images/${time}/"
-	cp -v ${DIR}/deploy/*.tar /mnt/farm/images/${time}/
-	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/${time}/gift_wrap_final_images.sh
-	chmod +x /mnt/farm/images/${time}/gift_wrap_final_images.sh
+	mkdir /mnt/farm/images/seeed-${time}/
+	echo "Copying: *.tar to server: images/seeed-${time}/"
+	cp -v ${DIR}/deploy/*.tar /mnt/farm/images/seeed-${time}/
+	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/seeed-${time}/gift_wrap_final_images.sh
+	chmod +x /mnt/farm/images/seeed-${time}/gift_wrap_final_images.sh
 fi
 

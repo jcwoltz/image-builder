@@ -107,9 +107,8 @@ setup_desktop () {
 		echo "Section \"Device\"" >> ${wfile}
 		echo "        Identifier      \"Builtin Default fbdev Device 0\"" >> ${wfile}
 
-#		echo "        Driver          \"modesetting\"" >> ${wfile}
-#		echo "        Option          \"AccelMethod\"   \"none\"" >> ${wfile}
-		echo "        Driver          \"fbdev\"" >> ${wfile}
+		echo "        Driver          \"modesetting\"" >> ${wfile}
+		echo "        Option          \"AccelMethod\"   \"none\"" >> ${wfile}
 
 		echo "#HWcursor_false        Option          \"HWcursor\"          \"false\"" >> ${wfile}
 
@@ -177,71 +176,7 @@ setup_desktop () {
 #	fi
 
 }
-setup_A2DP () {
-    wfile="/etc/dbus-1/system.d/pulseaudio-system.conf"
-    line=$(grep -nr org.pulseaudio.Server ${wfile} | awk  -F ':'  '{print $1}')
-    #add <allow send_destination="org.bluez"/>
-    sed -i ''${line}'a <allow send_destination="org.bluez"/>' ${wfile}
-    
-    wfile="/etc/pulse/system.pa"
-    line=$(grep -nr  module-suspend-on-idle ${wfile} | awk  -F ':'  '{print $1}')
-    #remove load-module module-suspend-on-idle
-    sed -i ''${line}'d' ${wfile}
-    sed -i '$a ###Baozhu added'  ${wfile} 
-    sed -i '$a ### Automatically load driver modules for Bluetooth hardware' ${wfile}
-    sed -i '$a .ifexists module-bluetooth-policy.so'  ${wfile} 
-    sed -i '$a load-module module-bluetooth-policy'  ${wfile} 
-    sed -i '$a .endif'  ${wfile}
-    sed -i '$a .ifexists module-bluetooth-discover.so'  ${wfile}
-    sed -i '$a load-module module-bluetooth-discover'  ${wfile}
-    sed -i '$a .endif'  ${wfile}
-    
-    #allow users of pulseaudio to communicate with bluetoothd
-    wfile="/etc/dbus-1/system.d/bluetooth.conf"
-    sed -i '$c <!-- allow users of pulseaudio to'  ${wfile}
-    sed -i '$a communicate with bluetoothd -->'  ${wfile}
-    sed -i '$a <policy group="pulse">'  ${wfile}
-    sed -i '$a <allow send_destination="org.bluez"/>'  ${wfile}
-    sed -i '$a </policy>'  ${wfile}
-    sed -i '$a </busconfig>'  ${wfile}
-    
-    #add pulseaudio service
-    wfile="/lib/systemd/system/pulseaudio.service"
-    echo "[Unit]" > ${wfile}
-    echo "Description=Pulse Audio" >> ${wfile}
-    echo "After=bb-wl18xx-bluetooth.service" >> ${wfile}
-    echo "[Service]" >> ${wfile}
-    echo "Type=simple" >> ${wfile}
-    echo "ExecStart=/usr/bin/pulseaudio --system --disallow-exit --disable-shm" >> ${wfile}
-    echo "[Install]" >> ${wfile}
-    echo "WantedBy=multi-user.target" >> ${wfile}
-    systemctl enable pulseaudio.service || true
-    
-    #add a2dp users to root group
-    usermod -a -G bluetooth root
-    usermod -a -G pulse root
-    usermod -a -G pulse-access root
-    
-    #add hci0 to udev rules
-    wfile="/etc/udev/rules.d/10-local.rules"
-    echo "# Power up bluetooth when hci0 is discovered" > ${wfile}
-    echo "ACTION==\"add\", KERNEL==\"hci0\", RUN+=\"/bin/hciconfig hci0 up\"" >> ${wfile}
-    
-    #config alsa
-    # wfile="/etc/asound.conf"
-    # echo "pcm.!default {" > ${wfile}
-    # echo "  type pulse" >> ${wfile}
-    # echo "  fallback "sysdefault"" >> ${wfile}
-    # echo "  hint {" >> ${wfile}
-    # echo "    show on" >> ${wfile}
-    # echo "    description "ALSA Output to pulseaudio"" >> ${wfile}
-    # echo "  }" >> ${wfile}
-    # echo "}" >> ${wfile}
-    # echo "ctl.!default {" >> ${wfile}
-    # echo "  type pulse" >> ${wfile}
-    # echo "  fallback "sysdefault"" >> ${wfile}
-    # echo "}" >> ${wfile}
-}
+
 install_pip_pkgs () {
 	if [ -f /usr/bin/python ] ; then
 		wget https://bootstrap.pypa.io/get-pip.py || true
@@ -266,20 +201,6 @@ install_pip_pkgs () {
 				pip install iw_parse
 			fi
 		fi
-	fi
-}
-
-cleanup_npm_cache () {
-	if [ -d /root/tmp/ ] ; then
-		rm -rf /root/tmp/ || true
-	fi
-
-	if [ -d /root/.npm ] ; then
-		rm -rf /root/.npm || true
-	fi
-
-	if [ -f /home/${rfs_username}/.npmrc ] ; then
-		rm -f /home/${rfs_username}/.npmrc || true
 	fi
 }
 
@@ -349,6 +270,11 @@ install_git_repos () {
 	git_branch="4.4-ti"
 	git_clone_branch
 
+	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
+	git_target_dir="/opt/source/dtb-4.9-ti"
+	git_branch="4.9-ti"
+	git_clone_branch
+
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
 	git_target_dir="/opt/source/bb.org-overlays"
 	git_clone
@@ -397,9 +323,9 @@ install_git_repos () {
 			if [ -f /usr/bin/make ] ; then
 				make
 				make install || true
-				if [ ! "x${image_type}" = "xtester-2gb" ] ; then
-					systemctl disable beagle-tester.service || true
-				fi
+#				if [ ! "x${image_type}" = "xtester-2gb" ] ; then
+#					systemctl disable beagle-tester.service || true
+#				fi
 			fi
 		fi
 	fi
@@ -427,20 +353,21 @@ other_source_links () {
 }
 
 unsecure_root () {
-	root_password=$(cat /etc/shadow | grep root | awk -F ':' '{print $2}')
-	sed -i -e 's:'$root_password'::g' /etc/shadow
+#	root_password=$(cat /etc/shadow | grep root | awk -F ':' '{print $2}')
+#	sed -i -e 's:'$root_password'::g' /etc/shadow
 
-	if [ -f /etc/ssh/sshd_config ] ; then
-		#Make ssh root@beaglebone work..
-		sed -i -e 's:PermitEmptyPasswords no:PermitEmptyPasswords yes:g' /etc/ssh/sshd_config
-		sed -i -e 's:UsePAM yes:UsePAM no:g' /etc/ssh/sshd_config
-		#Starting with Jessie:
-		sed -i -e 's:PermitRootLogin without-password:PermitRootLogin yes:g' /etc/ssh/sshd_config
-	fi
+#	if [ -f /etc/ssh/sshd_config ] ; then
+#		#Make ssh root@beaglebone work..
+#		sed -i -e 's:PermitEmptyPasswords no:PermitEmptyPasswords yes:g' /etc/ssh/sshd_config
+#		sed -i -e 's:UsePAM yes:UsePAM no:g' /etc/ssh/sshd_config
+#		#Starting with Jessie:
+#		sed -i -e 's:PermitRootLogin without-password:PermitRootLogin yes:g' /etc/ssh/sshd_config
+#	fi
 
-	if [ -f /etc/sudoers ] ; then
+	if [ -d /etc/sudoers.d/ ] ; then
 		#Don't require password for sudo access
-		echo "${rfs_username}  ALL=NOPASSWD: ALL" >>/etc/sudoers
+		echo "${rfs_username} ALL=NOPASSWD: ALL" >/etc/sudoers.d/${rfs_username}
+		chmod 0440 /etc/sudoers.d/${rfs_username}
 	fi
 }
 
@@ -448,7 +375,6 @@ is_this_qemu
 
 setup_system
 setup_desktop
-setup_A2DP
 
 install_pip_pkgs
 if [ -f /usr/bin/git ] ; then

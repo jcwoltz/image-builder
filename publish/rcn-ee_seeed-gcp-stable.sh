@@ -14,15 +14,12 @@ fi
 
 ./RootStock-NG.sh -c seeed-debian-jessie-gcp-iot-v4.4
 
-debian_jessie_seeed_gcp_iot="debian-8.6-seeed-gcp-iot-armhf-${time}"
+debian_jessie_seeed_gcp_iot="debian-8.7-seeed-gcp-iot-armhf-${time}"
 
 archive="xz -z -8"
 
 beaglebone="--dtb beaglebone --bbb-old-bootloader-in-emmc \
 --rootfs_label rootfs --hostname beaglebone --enable-cape-universal"
-
-arduino_tre="--dtb am335x-arduino-tre --boot_label ARDUINO-TRE \
---rootfs_label rootfs --hostname arduino-tre"
 
 omap5_uevm="--dtb omap5-uevm --rootfs_label rootfs --hostname omap5-uevm"
 beagle_x15="--dtb am57xx-beagle-x15 --rootfs_label rootfs \
@@ -143,10 +140,10 @@ if [ ! -d /mnt/farm/images/ ] ; then
 fi
 
 if [ -d /mnt/farm/images/ ] ; then
-	mkdir /mnt/farm/images/${time}/
-	echo "Copying: *.tar to server: images/${time}/"
-	cp -v ${DIR}/deploy/*.tar /mnt/farm/images/${time}/
-	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/${time}/gift_wrap_final_images.sh
-	chmod +x /mnt/farm/images/${time}/gift_wrap_final_images.sh
+	mkdir /mnt/farm/images/seeed-gcp-${time}/
+	echo "Copying: *.tar to server: images/seeed-gcp-${time}/"
+	cp -v ${DIR}/deploy/*.tar /mnt/farm/images/seeed-gcp-${time}/
+	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/seeed-gcp-${time}/gift_wrap_final_images.sh
+	chmod +x /mnt/farm/images/seeed-gcp-${time}/gift_wrap_final_images.sh
 fi
 

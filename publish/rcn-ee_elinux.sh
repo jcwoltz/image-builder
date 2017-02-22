@@ -10,16 +10,21 @@ if [ -d ./deploy ] ; then
 	sudo rm -rf ./deploy || true
 fi
 
+if [ ! -f jenkins.build ] ; then
 ./RootStock-NG.sh -c rcn-ee_console_debian_jessie_armhf
 ./RootStock-NG.sh -c rcn-ee_console_debian_stretch_armhf
 ./RootStock-NG.sh -c rcn-ee_console_ubuntu_xenial_armhf
+else
+	mkdir -p ${DIR}/deploy/ || true
+fi
 
- debian_stable="debian-8.6-console-armhf-${time}"
+ debian_stable="debian-8.7-console-armhf-${time}"
 debian_testing="debian-stretch-console-armhf-${time}"
  ubuntu_stable="ubuntu-16.04.1-console-armhf-${time}"
 #ubuntu_testing="ubuntu-16.04.1-console-armhf-${time}"
 
-archive="xz -z -8"
+xz_img="xz -z -8"
+xz_tar="xz -T0 -z -8"
 
 beaglebone="--dtb beaglebone --bbb-old-bootloader-in-emmc \
 --rootfs_label rootfs --enable-cape-universal"
@@ -40,7 +45,7 @@ copy_base_rootfs_to_mirror () {
                         if [ ! -f ${mirror_dir}/${time}/\${blend}/\${base_rootfs}.tar.xz ] ; then
                                 cp -v \${base_rootfs}.tar ${mirror_dir}/${time}/\${blend}/
                                 cd ${mirror_dir}/${time}/\${blend}/
-                                ${archive} \${base_rootfs}.tar && sha256sum \${base_rootfs}.tar.xz > \${base_rootfs}.tar.xz.sha256sum &
+                                ${xz_tar} \${base_rootfs}.tar && sha256sum \${base_rootfs}.tar.xz > \${base_rootfs}.tar.xz.sha256sum &
                                 cd -
                         fi
                 fi
@@ -88,7 +93,7 @@ copy_img_to_mirror () {
                                         sync
                                 fi
                                 cd ${mirror_dir}/${time}/\${blend}/
-                                ${archive} \${wfile}.img && sha256sum \${wfile}.img.xz > \${wfile}.img.xz.sha256sum &
+                                ${xz_img} \${wfile}.img && sha256sum \${wfile}.img.xz > \${wfile}.img.xz.sha256sum &
                                 cd -
                         fi
                 fi
@@ -169,15 +174,28 @@ __EOF__
 
 chmod +x ${DIR}/deploy/gift_wrap_final_images.sh
 
-if [ ! -d /mnt/farm/images/ ] ; then
-	#nfs mount...
-	sudo mount -a
+image_prefix="elinux"
+#node:
+if [ ! -d /var/www/html/farm/images/ ] ; then
+	if [ ! -d /mnt/farm/images/ ] ; then
+		#nfs mount...
+		sudo mount -a
+	fi
+
+	if [ -d /mnt/farm/images/ ] ; then
+		mkdir -p /mnt/farm/images/${image_prefix}-${time}/ || true
+		echo "Copying: *.tar to server: images/${image_prefix}-${time}/"
+		cp -v ${DIR}/deploy/*.tar /mnt/farm/images/${image_prefix}-${time}/ || true
+		cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/${image_prefix}-${time}/gift_wrap_final_images.sh || true
+		chmod +x /mnt/farm/images/${image_prefix}-${time}/gift_wrap_final_images.sh || true
+	fi
 fi
 
-if [ -d /mnt/farm/images/ ] ; then
-	mkdir /mnt/farm/images/${time}/
-	cp -v ${DIR}/deploy/*.tar /mnt/farm/images/${time}/
-	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /mnt/farm/images/${time}/gift_wrap_final_images.sh
-	chmod +x /mnt/farm/images/${time}/gift_wrap_final_images.sh
+#x86:
+if [ -d /var/www/html/farm/images/ ] ; then
+	mkdir -p /var/www/html/farm/images/${image_prefix}-${time}/ || true
+	echo "Copying: *.tar to server: images/${image_prefix}-${time}/"
+	cp -v ${DIR}/deploy/gift_wrap_final_images.sh /var/www/html/farm/images/${image_prefix}-${time}/gift_wrap_final_images.sh || true
+	chmod +x /var/www/html/farm/images/${image_prefix}-${time}/gift_wrap_final_images.sh || true
+	sudo chown -R apt-cacher-ng:apt-cacher-ng /var/www/html/farm/images/${image_prefix}-${time}/ || true
 fi
-
